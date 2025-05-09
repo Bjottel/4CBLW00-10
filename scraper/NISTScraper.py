@@ -158,7 +158,6 @@ def get_all_IR():
 
 
     curr_line = 0
-    last_line_seen_before_stopped_last_time = 22298
     with open("species.txt") as data_file:
         entries = data_file.readlines()
         for entry in entries:
