@@ -13,8 +13,6 @@ from multiprocessing.pool import ThreadPool
 import tqdm
 import time
 import datetime
-import numpy as np
-from jcamp import JCAMP_reader
 
 
 NIST_URL = 'http://webbook.nist.gov/cgi/cbook.cgi'
@@ -99,21 +97,6 @@ def get_jdx(nistid, stype = "IR"):
 
         with open(filepath_new, 'wb') as file:
             file.write(jdxResponse.content)
-
-            # Normalize immediately after download
-        try:
-            x_norm, A_norm = normalize_absorbance_jdx(filepath_new)
-            norm_dir = os.path.join(JDX_PATH, 'normalized')
-            os.makedirs(norm_dir, exist_ok=True)
-            base = os.path.basename(filepath_new).replace('.jdx', '')
-            np.savez(
-                os.path.join(norm_dir, f"{base}_norm.npz"),
-                x=x_norm,
-                y=A_norm
-            )
-        except Exception as e:
-            print(f"[!] normalization failed for {filepath_new}: {e}")
-        
         waitTime = 60
 
 
@@ -206,45 +189,7 @@ def get_all_IR():
                     return
         except Exception as e:
             print(str(e))
-
-def normalize_absorbance_jdx(jdx_path,
-                            baseline_correct=True):
-    """
-    Returns (x_norm, A_norm) both in [0,1]
-    - Reads transmittance or absorbance from the .jdx
-    - Converts to absorbance if needed
-    - Baseline corrects (optional)
-    - Scales A so max(A)=1
-    - Scales x so it runs from 0 to 1
-    """
-
-    data = JCAMP_reader(jdx_path)
-    x = np.array(data['x'], dtype=float)
-    y_raw = np.array(data['y'], dtype=float)
-
-    # 1) If %T, make fractional; otherwise assume fractional T
-    T = y_raw / 100.0 if y_raw.max() > 1.1 else y_raw
-    # Convert to absorbance
-    A = -np.log10(np.clip(T, 1e-8, None))
-
-    # 2) Baseline‐correct
-    if baseline_correct:
-        A = A - np.min(A)
-
-    # 3) Normalize A to [0,1]
-    if A.max() > 0:
-        A_norm = A / np.max(A)
-    else:
-        A_norm = A.copy()
-
-    # 4) Normalize x to [0,1]
-    x_min, x_max = x.min(), x.max()
-    if x_max > x_min:
-        x_norm = (x - x_min) / (x_max - x_min)
-    else:
-        x_norm = x - x_min  # flat axis
-
-    return x_norm, A_norm
+            
 
 if __name__ == '__main__':
     get_all_IR()
