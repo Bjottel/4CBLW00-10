@@ -283,5 +283,4 @@ def plot_individual_augmentations(csv_file, id_number):
 
 
 plot_combined_augmentations(AUGMENTED_CSV, id_number=3)
-
 plot_individual_augmentations(IND_AUGMENTED_CSV, id_number=1)
