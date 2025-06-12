@@ -193,7 +193,14 @@ def display_answer_data(path):
         predicted_labels, probabilities = predict(preprocess_jdx(data))
 
         scores = [round(val * 100, 2) for val in probabilities]
-        groups = ["Phenol", "Aldehyde", "Benzene Ring"]
+        groups = ["Phenol", "Aldehyde", "Benzene Ring","Toxicity"]
+        if  scores[1]>30 and scores[2]>30 or scores[0]>30:
+            scores.append("Toxic")
+        elif scores[2]>30:
+            scores.append("Possibly Toxic, but unclear")
+
+        elif scores[1]>30:
+            scores.append("Toxicity risk")
 
         tree.delete(*tree.get_children())
         tree["columns"] = ("Functional Group", "Confidence (%)")
