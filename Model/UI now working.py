@@ -195,9 +195,9 @@ def display_answer_data(path):
         scores = [round(val * 100, 2) for val in probabilities]
         groups = ["Phenol", "Aldehyde", "Benzene Ring","Toxicity"]
         if  scores[1]>30 and scores[2]>30 or scores[0]>30:
-            scores.append("Toxic")
+            scores.append("High probability of toxicity")
         elif scores[2]>30:
-            scores.append("Possibly Toxic, but unclear")
+            scores.append("Significant risk of toxicity")
 
         elif scores[1]>30:
             scores.append("Toxicity risk")
