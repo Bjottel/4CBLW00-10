@@ -5,7 +5,7 @@ import jcamp  #if it doesn't work: put pip install jcamp in command prompt
 import torch
 import torch.nn as nn
 MODEL_PATH = 'model_full.pth'
-#MODEL_PATH="C:/Users/Pleun/Documents/Data science CBL/model_full.pth"
+
 # Copy paste from Model.ipynb
 
 import numpy as np
@@ -19,7 +19,7 @@ def is_jdx_valid(jdx_file):
     try:
         jcamp_dict = jcamp.jcamp_readfile(jdx_file)
     except Exception as e:
-        error_reasons[0] = error_reasons[0] + 1
+        raise Exception('The JCAMP reader could not read this file')
         return False, {}
     
     # Some jcamp files contain a full spectrum and peak tables/other data. In these cases the jcamp_dict['children'] exists.
@@ -43,30 +43,7 @@ def is_jdx_valid(jdx_file):
         error_reasons[3] = error_reasons[3] + 1
         return False, jcamp_dict
     
-    # We first have to make sure our first/last x are given in cm^-1
-    if ('minx' in jcamp_dict):
-        min_x = jcamp_dict['minx']
-    else:
-        min_x = min(jcamp_dict['x'])
-        
-    if ('maxx' in jcamp_dict):
-        max_x = jcamp_dict['maxx']
-    else:
-        max_x = max(jcamp_dict['x'])
-
-    if (jcamp_dict['xunits'].lower() == 'micrometers'):
-        min_x = 1e4 / min_x
-        max_x = 1e4 / max_x
-        
-    # Since we only care for the spectrum from wavenumbers MIN_WAVENUMBER to MAX_WAVENUMBER, we disregard any coverage outside that range.
-    min_x = max(min_x, MIN_WAVENUMBER)
-    max_x = min(max_x, MAX_WAVENUMBER)
     
-    # Some samples only cover a very small range of wavelengths. This is generally bad so we filter them out.
-    cover = (max_x - min_x) / (MAX_WAVENUMBER - MIN_WAVENUMBER)
-    if (cover < COVER_THRESHOLD):
-        error_reasons[4] = error_reasons[4] + 1
-        return False, jcamp_dict
     
     return True, jcamp_dict
 def preprocess_jdx(jcamp_dict, baseline_correct=True):  
@@ -188,28 +165,29 @@ def open_jcamp_file():
 
 def display_answer_data(path):
     try:
-        data = jcamp.jcamp_readfile(path)
-        
+        valid,data = is_jdx_valid(path)
         predicted_labels, probabilities = predict(preprocess_jdx(data))
-
+        predicted_labels.append(" ")
         scores = [round(val * 100, 2) for val in probabilities]
         groups = ["Phenol", "Aldehyde", "Benzene Ring","Toxicity"]
-        if  scores[1]>30 and scores[2]>30 or scores[0]>30:
+        if  predicted_labels[1]==True and predicted_labels[2]==True or scores[0]==True:
             scores.append("High probability of toxicity")
-        elif scores[2]>30:
+        elif predicted_labels[1]==True:
             scores.append("Significant risk of toxicity")
-
-        elif scores[1]>30:
+        elif predicted_labels[2]==True:
             scores.append("Toxicity risk")
+        else:
+            scores.append("None present")
+        
 
         tree.delete(*tree.get_children())
-        tree["columns"] = ("Functional Group", "Confidence (%)")
+        tree["columns"] = ("Functional Group","Present", "Confidence (%)")
         for col in tree["columns"]:
             tree.heading(col, text=col)
             tree.column(col, width=150)
 
-        for g, sc in zip(groups, scores):
-            tree.insert("", "end", values=(g, sc))
+        for g,pres, sc in zip(groups,predicted_labels, scores):
+            tree.insert("", "end", values=(g,pres, sc))
 
         status_label.config(text=f"JCAMP file loaded: {path}")
 
