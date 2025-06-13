@@ -4,8 +4,8 @@ import numpy as np
 import jcamp  #if it doesn't work: put pip install jcamp in command prompt
 import torch
 import torch.nn as nn
-#MODEL_PATH = 'model_full.pth'
-MODEL_PATH="C:/Users/Pleun/Documents/Data science CBL/model_full.pth"
+MODEL_PATH = 'model_full.pth'
+#MODEL_PATH="C:/Users/Pleun/Documents/Data science CBL/model_full.pth"
 # Copy paste from Model.ipynb
 
 import numpy as np
